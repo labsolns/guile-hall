@@ -1,0 +1,7 @@
+(authorizations
+ (version 0)               ;current file format version
+
+ (("F9A4 678D 2199 6F46 0A64  A6AA 64A3 2C02 5F43 481A"
+   (name "peter.lapan"))
+  
+  ))

@@ -1,0 +1,1224 @@
+This is guile-hall.info, produced by makeinfo version 6.7 from
+hall.texi.
+
+Copyright © 2018-2020 Alex Sassmannshausen
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.  A
+copy of the license is included in the section entitled “GNU Free
+Documentation License”.
+INFO-DIR-SECTION The Algorithmic Language Scheme
+START-INFO-DIR-ENTRY
+* Guile Hall: (guile-hall).      Guile project bootstrapping
+END-INFO-DIR-ENTRY
+
+
+File: guile-hall.info,  Node: Top,  Next: Introduction,  Up: (dir)
+
+Guile Hall
+**********
+
+This document describes Guile Hall version 0.4.0.
+
+* Menu:
+
+* Introduction::                What now Guile Hall?
+* Installation::                How now Guile Hall?
+* Quickstart::                  What’s in a project
+* The Subcommands::             In which all is revealed…
+* The Hall Specification::      Spec ops, grunt!
+
+* Contributing::                Contributing to the Guile Hall project
+* Acknowledgments::             Thanks!
+
+* A Hall Spec File::            Hall’s spec file
+* A Script File::               Hall’s script file
+
+* General Index::               Concepts, functions, variables - Oh My!
+
+
+File: guile-hall.info,  Node: Introduction,  Next: Installation,  Prev: Top,  Up: Top
+
+1 Introduction
+**************
+
+                                            Look, Simba, everything the
+                                          light touches is our kingdom.
+                                                               – Mufasa
+
+   There’s more to being king than getting your way all the time.  And
+so it is with managing your own coding project!
+
+   Guile Hall is meant to make that _more_ easy to manage.  But what is
+this _more_?
+
+   Here is a non-exhaustive list:
+   • Providing a way for others to install your software (this is
+     generally done using a _build system_;
+   • Ensuring that installation method works in different environments;
+   • Writing documentation for your project;
+   • Ensuring the documentation is available to the end user;
+   • Writing tests for your project;
+   • Ensuring your tests play nicely with your build system;
+   • Providing files as part of the source code that document the build
+     system & the current status of the project;
+   • Managing your version number;
+   • Choosing and installing your license;
+   • Maintaining a Guix recipe for development & contribution;
+
+   Hall leverages existing tooling, like autotools, where feasible and
+provides additional tools for the Guile specific parts.
+
+   Guile Hall is in early stages of development.  No guarantees are made
+as to efficiency or elegance of code; nor do we guarantee API stability.
+
+     Super Saiyan mode:
+     Whenever you encounter a block such as this, feel free to ignore it
+     when first learning about Hall.  It is intended for advanced use!
+
+
+File: guile-hall.info,  Node: Installation,  Next: Quickstart,  Prev: Introduction,  Up: Top
+
+2 Installation
+**************
+
+                                            Look Dave, I can see you’re
+                                               really upset about this.
+                                                            – Hall 9000
+
+   At present there are two ways to install Hall:
+   • Use _Guix_, Guile’s unofficial package manager
+   • Go the manual route.
+
+   below you will find instructions for both.
+
+Using Guix
+==========
+
+This is the preferred approach.  Hall provides tight coupling to Guix,
+and installing Hall through Guix is by far the simplest way to go.  I’m
+not gonna lie here, my agenda is to get you to install Guix.
+
+   Go get it from the Guix website (https://gnu.org/s/guix)!
+
+   Once you’ve set it up, all you have to do is run ‘guix package -i
+guile-hall’.
+
+Using Autotools
+===============
+
+This route is somewhat more manual.  Even so, installing Guile Hall
+should be as easy as:
+  1. Install the dependencies:
+        • autoconf
+        • automake
+        • pkg-config
+        • guile
+        • git
+        • texinfo
+        • guile-config
+  2. Clone the Guile Hall repository
+  3. Run ‘autoreconf -vif && ./configure && make check && sudo make
+     install’
+
+   Exactly how you install the dependencies will depend on your distro.
+Below you will find the instructions for the entire installation
+procedure under Debian.
+
+   While installing Guile libraries using autotools you will need to
+augment the ‘GUILE_LOAD_PATH’ and the ‘GUILE_LOAD_COMPILED_PATH’
+environment variables to ensure that the installed code will be
+available to Guile & Guile applications.  See the example instructions
+below for one way to do this.
+
+     # Install the dependencies
+     sudo apt install autoconf automake pkg-config \
+                      texinfo guile guile-2.0-dev git
+
+     # Clone the guile-config repository & cd
+     git clone https://gitlab.com/a-sassmannshausen/guile-config
+     cd guile-config
+
+     # Install guile-config by doing the Autotools dance!
+     autoreconf -vif && ./configure && make check
+     sudo make install
+     cd ..
+
+     # By default guile libraries will be installed in /usr/local/
+     # so we must set the environment variables
+     export GUILE_LOAD_PATH=/usr/local/share/guile/site/2.0/
+     export GUILE_LOAD_COMPILED_PATH=/usr/local/lib/guile/2.0/site-ccache/
+
+     # Now we can install guile-hall
+     # Clone the repository & cd
+     git clone https://gitlab.com/a-sassmannshausen/guile-hall
+     cd guile-hall
+
+     # Autotools dance!
+     autoreconf -vif && ./configure && make check
+     sudo make install
+
+     # The application will be installed in /usr/local/bin/
+     # If hall --version does not work, try:
+     export PATH=/usr/local/bin/:$PATH
+
+     # Now you can run hall!
+
+     hall --version
+
+     # To make the above permanent, you could add the commands to your
+     # ~/.bashrc:
+     echo export GUILE_LOAD_PATH=/usr/local/share/guile/site/2.0/ >> ~/.bashrc
+     echo export GUILE_LOAD_COMPILED_PATH= /usr/local/lib/guile/2.0/site-ccache/ >> ~/.bashrc
+     echo export PATH=/usr/local/bin/:$PATH >>~/.bashrc
+
+
+File: guile-hall.info,  Node: Quickstart,  Next: The Subcommands,  Prev: Installation,  Up: Top
+
+3 Quickstart
+************
+
+Sometimes the best way to learn is to dive right in.  Below you’ll find
+some examples of how to use Hall.  Hopefully you will be able to derive
+about 99% of your Hall usage from these!  If you are interested in
+reading a full tutorial, check out Jérémy Korwin-Zmijowski post
+(https://write.as/jeko/hall-a-project-manager-for-the-guile-programming-language)!
+
+   For more detailed information on each of the commands see the
+following chapter.
+
+Creating a New Project
+======================
+
+     cd /to/some/directory/
+     hall init --author "Jane Doe" frobnigator --execute
+     # Creating project: frobnigator
+     # ...
+     cd frobnigator
+     # Do some hacking
+     emacs hall.scm # Add other Guile dependencies
+     # Add new files to our hall.scm
+     hall scan
+     # Dryrun:
+     #...
+     hall scan -x # Add new files.
+
+Converting an Existing Project
+==============================
+
+     cd /to/some/guile-project/
+     hall init --convert --author "Jane Doe" --prefix guile frobnigator --execute
+     # Creating project: guile-frobnigator
+     # ...
+     emacs hall.scm # Add other Guile dependencies, and tweak project settings.
+     # Add new files to our hall.scm
+     hall scan
+     # Remove cruft
+     hall clean
+
+Getting Ready for Distribution
+==============================
+
+     # Get ready to test commandline or distribute:
+     hall dist -x # create the build infrastructure
+
+     # Oops, we made a mistake
+     hall clean -x # undo previous step
+
+     # Let's re-generate the guix file.
+     rm guix.scm && hall guix -x # re-generate guix file
+
+     # Now let's create the build infrastructure
+     hall dist -x # recreate build infrastructure
+
+     # Let's build it!
+     guix environment -l guix.scm
+     autoreconf -vif && ./configure && make && exit
+
+     # Let's run it!
+     ./pre-inst-env guile # Here we can load our local libraries!
+     ./pre-inst-env scripts/$script # Or run our scripts
+
+     # We're ready for a tarball
+     guix environment -l guix.scm
+     make dist
+
+
+File: guile-hall.info,  Node: The Subcommands,  Next: The Hall Specification,  Prev: Quickstart,  Up: Top
+
+4 The Subcommands
+*****************
+
+Hall is sub-divided into different subcommands designed to achieve
+specific tasks.  You can pass the ‘--help’ switch to any of the
+subcommands to get concise documentation.
+
+   The following sections describe the Hall subcommands in detail.
+
+   A few general principle apply to all of Hall’s commands though, and
+it might behoove us to cover these first:
+   • All commands are cowardly by nature — they will not change any
+     files unless the ‘--execute’ switch is used.
+   • The special switches ‘--help’, ‘--version’, ‘--usage’ and
+     ‘--cmdtree’ are always available.  They will act as your guides as
+     you explore the lands of Hall.
+   • Hall has a configuration file located at ‘~/.hall’.  You can set
+     some settings there, to provide default values for all your
+     projects.
+
+   Finally, at Hall’s core lies the notion of a hall specification.
+This specification is defined in the project’s ‘hall.scm’ file.  All
+commands do _something_ with that file: ‘initiate’ generates it; ‘scan’
+updates it; ‘clean’ reads it to tidy the project; ‘dist’ and ‘build’
+read it to generate additional files.
+
+   You can edit the specification manually though I hope to expose
+commands to manipulate all aspects of it in the future.  For now, the
+files section in particular, should normally only be changed through the
+‘scan’ command.
+
+* Menu:
+
+* Hall Initiate::
+* Hall Scan::
+* Hall Clean::
+* Hall Distribution-System::
+* Hall Build-System::
+
+
+File: guile-hall.info,  Node: Hall Initiate,  Next: Hall Scan,  Up: The Subcommands
+
+4.1 Hall Initiate
+=================
+
+Use ‘hall initiate’ to create new Guile projects, or to convert an
+existing Guile project to use Hall (using the ‘--convert’ option.
+
+   Outside of the standard options, ‘init’ also accepts ‘--author’,
+‘--license’, ‘--prefix’ and ‘--website’.  All of these can be set in the
+‘~/.hall’ configuration file.
+
+   It also accepts the special ‘--convert’ switch, which will probably
+become a subcommand in the near future.
+
+ -- Setting: string --author
+     The name of the project author.  You can enclose it in quotation
+     marks when specifying it on the command-line to accomodate multiple
+     parts.
+
+     At present, author is treated as a single string.  In future we aim
+     to support multiple authors more elegantly by accepting a list of
+     strings.
+
+     The author is set in the project’s ‘hall.scm’ file, from whence it
+     is pushed to the autotools infrastructure, as well as the Guix
+     recipe.
+
+          Super Saiyan mode:
+          You can access the author variable in your ‘scripts/*.in’ script
+          files using the @AUTHOR@ variable.
+
+ -- Setting: license --license
+     The license under which the project is licensed.  Any license
+     supported by Guile Config is supported here.
+
+     The most common licenses are ‘agpl3+’ & ‘gpl3+’.  For a full list,
+     please consult Guile Config’s licenses.scm
+     (https://gitlab.com/a-sassmannshausen/guile-config/blob/master/config/licenses.scm).
+
+     If you use a GNU project license Hall will automatically create a
+     ‘COPYING’ file for you in the project directory.  This feature
+     requires an active internet connection.  If you are not online, or
+     if you use a non-GNU license, ‘COPYING’ will simply contain some
+     placeholder text.
+
+     The license passed here will be set in the project’s ‘hall.scm’
+     file, from whence it is pushed to the autotools & guix
+     infrastructure.
+
+          Super Saiyan mode:
+          You can access the license variable in your ‘scripts/*.in’ script
+          files using the @LICENSE@ variable.
+
+ -- Setting: string --prefix
+     An optional prefix for the project.  In Guix, we like to name
+     packages with a prefix according to the language they belong to.
+     So your wonderful cat meme library may be called _kittehs_, but in
+     Guix it would be packaged as _guile-kittehs_.
+
+     Similarly, the directory in which Hall would create the project
+     would also be guile-kittehs.
+
+     The full list of places in which the prefix will be used is:
+        • The project’s root folder when a project is created using
+          Hall;
+        • The project’s manual file name;
+        • The project’s name in the autotools infrastructure (and thus
+          any tarballs generated);
+        • The project’s guix recipe;
+
+     The prefix and project name are automatically separated by a ‘-‘,
+     so for instance
+          hall init kittehs --prefix=guile
+     would result in a ‘full-project-name‘ of guile-kittehs.
+
+ -- Setting: url --website
+     The website where the project lives.
+
+     The url passed here will be set in the project’s ‘hall.scm’ file,
+     from whence it is pushed to the guix recipe.
+
+ -- Switch: boolean --convert
+     The convert switch allows you to create a hall specification file
+     in an existing Guile project that has hitherto not used Hall.  You
+     can use this tool to migrate to Hall!
+
+     In effect, we run the same process as for ‘initiate’, but do not
+     first create the project root directory.  The process is simply run
+     in the current directory.
+
+     Of course, no files are overwritten in the process, so you may wish
+     to delete some files (e.g.  COPYING) prior to running this command
+     if you would like Hall to regenerate them for you.
+
+* Menu:
+
+* Hall Initiate Refresh::
+
+
+File: guile-hall.info,  Node: Hall Initiate Refresh,  Up: Hall Initiate
+
+4.1.1 Hall Initiate Refresh
+---------------------------
+
+This simple command will regenerate the ‘HACKING’ & ‘COPYING’ files for
+your project.
+
+   Do be aware that the dry-run command won’t show you this, but this
+command is one of the few that actively deletes & then recreates the
+affected files.
+
+   Nonetheless, this command is convenient for when you didn’t have
+access to the internet at the time you originally created the project.
+
+
+File: guile-hall.info,  Node: Hall Scan,  Next: Hall Clean,  Prev: Hall Initiate,  Up: The Subcommands
+
+4.2 Hall Scan
+=============
+
+Use ‘hall scan’ when you want add files you recently created to your
+‘hall.scm’ file.
+
+   Hall maintains a description of your project in the ‘hall.scm’
+specification file.  The first part of the specification file is
+concerned with basic metadata.  The second part, recorded in the ‘files’
+section, is concerned with the files that your project is composed of.
+
+   Hall needs to know about 5 different types of files:
+   • _Library files_, which are stored in the ‘libraries’ section, are
+     all the modules that your Guile project provides.  This can be a
+     single file, or it could be a complicated tree of files.
+   • _Tests_ are your unit tests.  They are captured in the ‘tests’
+     section.
+   • _programs_ are the scripts, if any, your project provides to the
+     end-user.  They are assumed to exist in the project’s ‘scripts/’
+     sub-folder and are described in the ‘programs’ section.
+   • _documentation files_, which are stored in the ‘documentation’
+     section, consist of your project’s manual; but also if the
+     repository’s additional resources: README, HACKING, COPYING, NEWS,
+     AUTHORs, etc.
+   • Finally, _infrastructure files_ cover those files that are used by
+     the project for distribution and maintenance purposes.  At the very
+     least this section will contain your ‘hall.scm’ file, but it will
+     likely include your ‘guix.scm’ file and possibly some others.
+     These files are enumerated in the ‘infrastructure’ section.
+
+   You can probably tweak the ‘files’ section yourself if you desire.
+On a day-to-day basis though, it’s probably easier to let Hall do the
+heavy-lifting: the scan command recursively walks your project and adds
+additional files it encounters to the appropriate sub-section of the
+‘files’ section.
+
+   At present, the algorithm it uses is very straightforward: any ‘.scm’
+files it encounters in the project name’s subdirectory are added to the
+‘libraries’ section.  Any such files in the ‘tests/’ folder are added to
+the ‘tests’ section.
+
+   Any files it encounters it finds in the ‘scripts/’ subdirectory are
+added to the ‘programs’ section, and any files in the ‘doc/’ folder are
+added to the ‘documentation’ section.
+
+   The infrastructure section needs to be managed manually, but
+generally does not change very often at all!
+
+   ‘hall scan’ is rather paranoid, and will often complain about files
+of an unknown file type.  You have several options:
+  1. Use ‘hall clean’ to remove all files that are cruft from your
+     project.
+  2. Manually remove files that cause interference.
+  3. Use the ‘--skip’ switch to tell scan to ignore files matching
+     specific regexp patterns.  See below.
+
+ -- Switch: list --skip
+     A comma delimited string, in which each entry is a Guile style
+     regexp pattern which will be used to skip files and/or folders
+     during the scan operation.
+
+          hall scan --skip="SKIP.me,cruft-folder,^hall.*$"
+
+   You can also add individual files to your ‘hall.scm’ file, by
+invoking ‘hall scan’ with 2 optional positional arguments:
+
+ -- Argument: string filename
+     The file, relative to your project root, to be added to your
+     ‘hall.scm’ file.
+
+ -- Argument: string section
+     The section that ‘filename’ should be added to.  This should be one
+     of the five sections enumerated above.
+
+     # To add the file frobnigator.scm inside the tests directory to the
+     # tests section of your hall.scm file, run
+     hall scan tests/frobnigator.scm tests
+
+
+File: guile-hall.info,  Node: Hall Clean,  Next: Hall Distribution-System,  Prev: Hall Scan,  Up: The Subcommands
+
+4.3 Hall Clean
+==============
+
+If you are anything like me then you will regularly fill a project with
+any number of snippet files, throw-away notes or false starts.  You may
+also regularly find yourself removing files that are automatically
+generated as part of distribution or compilation testing.
+
+   Hall provides the ‘clean’ subcommand to remove any files from your
+project that are not registered in the ‘hall.scm’ spec file.
+
+   Usage is very simple: running ‘hall clean’ will display a list of
+files that will be either deleted or kept, as well as a third group of
+files that were skipped, and will be ignored by ‘clean’.
+
+   Re-running the command with the ‘--execute’ switch will carry out the
+cleaning process.
+
+   ‘hall clean’ ignores a few files by default (they are always shown in
+the _Skipping_ group), but you can manually add to this list using the
+‘--skip’ switch.
+
+ -- Switch: list --skip
+     A comma delimited string, in which each entry is a Guile style
+     regexp pattern which will be used to skip files and/or folders
+     during the clean operation.
+
+          hall clean --skip="SKIP.me,cruft-folder,^hall.*$"
+
+
+File: guile-hall.info,  Node: Hall Distribution-System,  Next: Hall Build-System,  Prev: Hall Clean,  Up: The Subcommands
+
+4.4 Hall Distribution-System
+============================
+
+Hall can generate Guix recipes.  These can be used for local
+development, for distribution with your code repository and for
+contributing your project to Guix itself.
+
+   The ‘hall dist’ command will print your project’s Guix recipe to
+standard out (normally your terminal).  The recipe it prints will be of
+type _local_.  This means that the recipe points to a tarball of your
+project in the project’s root directory.
+
+   You can use the ‘--type’ switch to change this behaviour:
+
+ -- Switch: string --type
+     Either _local_, _git_ or _tarball_.  The only difference between
+     the three is the ‘source’ section of the Guix recipe: in the first
+     case it points to a local tarball; in the second it points to a
+     template git repository derived from the home page set in your
+     ‘hall.scm’ spec file.  In the third case it points to a remote
+     tarball template.  This is again derived from your project’s home
+     page.
+
+          hall dist --type=local|git|tarball
+
+   In future, this subcommand will be used to manage configuration files
+for multiple distribution systems.
+
+
+File: guile-hall.info,  Node: Hall Build-System,  Prev: Hall Distribution-System,  Up: The Subcommands
+
+4.5 Hall Build-System
+=====================
+
+Our final subcommand, the ‘build’ command, auto-generates files that you
+will want to include before distributing your project.
+
+   Currently this subcommand only supports the gnu build system, but
+work is underway to support the Guix based minimalist guile build
+system.
+
+   There are several approaches you can take here:
+  1. Minimalist — make Hall a dependency of your project so that you
+     only need to have the bare minimum number of files in your project.
+     When you roll a new release tarball, you can run the following
+     command sequence:
+
+          # install dependencies for distribution
+          guix environment -l guix
+          # generate build infrastructure
+          hall dist -x
+          # build tarball
+          autoreconf -vif && ./configure && make distcheck
+
+     This approach is particularly suited if you have a tarball release
+     model.
+  2. Compromise — Run ‘hall dist’ and commit the resulting files to your
+     repository.  You can periodically repeat this process if your build
+     infrastructure needs to be updated (e.g.  you added new library
+     files to your project).
+
+     When it’s time to build a release tarball you only have to run
+     ‘autoreconf -vif && ./configure && make distcheck’.
+
+     Anyone else can install your library from your repository by doing:
+          # install dependencies for distribution
+          guix environment -l guix
+          # build tarball
+          autoreconf -vif && ./configure && make distcheck
+
+     This approach is suited to git release based approaches.
+
+
+File: guile-hall.info,  Node: The Hall Specification,  Next: Contributing,  Prev: The Subcommands,  Up: Top
+
+5 The Hall Specification
+************************
+
+I like to think the Hall specification is relatively easy on the eye,
+and self-explanatory — especially if you have previously worked with
+Guix.  Regardless, any new format can be daunting at first, and this
+section aims to take the edge off grokking your project’s spec file.
+
+   A Hall specification contains several fields:
+
+‘name’
+     Your project’s name.  This should be a string, which means text
+     enclosed by quotation marks (‘"‘).
+
+     The value of this field is used throughout Hall in its operations,
+     particularly when generating your build/distribution infrastructure
+     & Guix recipe.
+
+‘prefix’
+     An optional prefix for the project.  In Guix, packages are named
+     with a prefix according to the language they belong to.  So your
+     wonderful cat meme library may be called _kittehs_, but in Guix it
+     would be packaged as _guile-kittehs_.
+
+     Similarly, the directory in which Hall would create the project
+     would also be guile-kittehs.
+
+     The full list of places in which the prefix will be used is:
+        • The project’s root folder when a project is created using
+          Hall;
+        • The project’s manual file name;
+        • The project’s name in the autotools infrastructure (and thus
+          any tarballs generated);
+        • The project’s guix recipe;
+
+     The prefix and project name are automatically separated by a ‘-‘,
+     so for instance
+          hall init kittehs --prefix=guile
+     would result in a ‘full-project-name‘ of guile-kittehs.
+
+‘version’
+     The current version of your project.  This should be a string that
+     that has a capacity for some form of incremental ordering.  String
+     representations of numbers are pretty good.
+
+     The value of the version field is used in generating the autotools
+     infrastructure and Guix recipes.
+
+          Super Saiyan mode:
+          You can access the version variable in your ‘scripts/*.in’ script
+          files using the @HVERSION@ variable.
+
+          It has a silly name because @VERSION@ is already taken by the
+          autotools infrastructure but behaves subtly differently from Hall’s
+          propagated variables.  Feel free to use either!
+
+‘author’
+     The name of the project author.
+
+     At present, author is treated as a single string.  In future we aim
+     to support multiple authors more elegantly by accepting a list of
+     strings.
+
+     The value of the author field is pushed to the autotools
+     infrastructure, as well as the Guix recipe.
+
+          Super Saiyan mode:
+          You can access the author variable in your ‘scripts/*.in’ script
+          files using the @AUTHOR@ variable.
+
+‘copyright’
+     The years for which the author claims copyright over the project.
+     This should be a literal list of numbers (years).
+
+     This value is used when first building various files, such as the
+     manual template & the NEWS file.
+
+          Super Saiyan mode:
+          You can access the copyright variable in your ‘scripts/*.in’
+          script files using the @COPYRIGHT@ variable.
+
+‘synopsis’
+     This should be a short (maximum 70 characters) description of your
+     project.
+
+     It is used when generating Guix recipes
+
+‘description’
+     This can be a full description of your project.
+
+     It is used when generating Guix recipes
+
+‘home-page’
+     The website where the project lives.
+
+     This field is used when generating Guix recipes.
+
+‘license’
+     The license under which the project is licensed.  Any license
+     supported by Guile Config is supported here.
+
+     The most common licenses are ‘agpl3+’ & ‘gpl3+’.  For a full list,
+     please consult Guile Config’s licenses.scm
+     (https://gitlab.com/a-sassmannshausen/guile-config/blob/master/config/licenses.scm).
+
+     If you use a GNU project license Hall will automatically create a
+     ‘COPYING’ file for you in the project directory.  This feature
+     requires an active internet connection.  If you are not online, or
+     if you use a non-GNU license, ‘COPYING’ will simply contain some
+     placeholder text.
+
+     The license set in your spec file, from is pushed to the autotools
+     & guix infrastructure.
+
+          Super Saiyan mode:
+          You can access the license variable in your ‘scripts/*.in’ script
+          files using the @LICENSE@ variable.
+
+‘dependencies’
+     The dependencies field is designed to hold your project’s Guile
+     dependencies, so any other Guile modules that your project depends
+     on.
+
+     It is primarily used when generating Guix recipes.
+
+     The format of the field is at heart the same as the one used by
+     Guix’s dependencies field.  It looks as follows:
+          ‘((label [library-configure-test] ,guix-package-name) ...)
+
+     In the above, LABEL should be a string of your choosing.  It is the
+     label by which the dependency can be referred to in Guix code.
+
+     LIBRARY-CONFIGURE-TEST is an optional Guile module specification
+     which, when present, is used at configure time to ensure the
+     dependency is present on the system.  In other words, when the
+     end-user runs ‘./configure’, the configure script will try to load
+     LIBRARY-CONFIGURE-TEST in a Guile session to see if it is available
+     on the system.  If not, ‘./configure’ exits with an error.
+
+     GUIX-PACKAGE-NAME is the name of the Guile dependency in Guix.
+
+     The ‘...‘ means that you can specify multiple dependencies in this
+     manner.
+
+     As an example:
+          `(("guile-hall" (hall common) ,guile-hall)
+            ("guix" ,guix))
+
+     The above is a valid dependencies declaration which says the
+     following:
+        • We depend on the Guix packages GUILE-HALL and GUIX;
+        • We should test for the existence of GUILE-HALL at configure
+          time by attempting to load the ‘(hall common)’ library.
+
+‘skip’
+     The skip field can be used to set default ‘--skip’ values for your
+     project.  The value of this field should be a list of strings,
+     where each string would be a valid ‘--skip’ pattern.
+
+     For example:
+          (skip ("hello.scm" ".*\\.xml"))
+
+     The above would set default ‘--skip’ values for ‘scan’ and ‘clean’
+     to ignore the ‘hello.scm’ file and all files matching the xml
+     regex.
+
+‘files’
+     This section is generally managed by Hall itself, through the
+     ‘init’ and ‘scan’ subcommands.
+
+     In short, it contains a representation of the important files in
+     your project.
+
+     More information is available in the section on the ‘scan’
+     subcommand.
+
+
+File: guile-hall.info,  Node: Contributing,  Next: Acknowledgments,  Prev: The Hall Specification,  Up: Top
+
+6 Contributing
+**************
+
+Guile Hall is an open project and I actively invite contribution.  Get
+in touch with the project on <alex@komputilo.eu> or on the project
+website at https://gitlab.com/a-sassmannshausen/guile-hall.  The project
+welcomes ideas, bug reports, patches, or feedback.
+
+   Please see the HACKING file that comes with the Guile Hall source
+code for practical details about contributions.
+
+
+File: guile-hall.info,  Node: Acknowledgments,  Next: A Hall Spec File,  Prev: Contributing,  Up: Top
+
+7 Acknowledgments
+*****************
+
+Guile Hall is intended as a gift to the Guile & Guix communities,
+without whom I would never have learned to program.
+
+
+File: guile-hall.info,  Node: A Hall Spec File,  Next: A Script File,  Prev: Acknowledgments,  Up: Top
+
+Appendix A A Hall Spec File
+***************************
+
+As an example of a healthy looking hall specification file, please see
+below for Hall’s own current ‘hall.scm’ file.
+
+     (hall-description
+       (name "hall")
+       (prefix "guile")
+       (version "0.4.0")
+       (author "Alex Sassmannshausen")
+       (copyright (2018 2020 2021))
+       (synopsis "Guile project tooling")
+       (description
+         "Hall is a command-line application and a set of Guile libraries that allow you to quickly create and publish Guile projects.  It allows you to transparently support the GNU build system, manage a project hierarchy & provides tight coupling to Guix.")
+       (home-page
+         "https://gitlab.com/a-sassmannshausen/guile-hall")
+       (license gpl3+)
+       (dependencies
+         `(("guile-config" (config) ,guile-config)))
+       (files (libraries
+                ((directory
+                   "hall"
+                   ((scheme-file "workarounds")
+                    (scheme-file "build")
+                    (scheme-file "dist")
+                    (scheme-file "common")
+                    (scheme-file "scan")
+                    (scheme-file "builders")
+                    (scheme-file "clean")
+                    (scheme-file "init")
+                    (scheme-file "spec")))))
+              (tests ((directory
+                        "tests"
+                        ((scheme-file "common")
+                         (scheme-file "hall")
+                         (scheme-file "spec")))))
+              (programs
+                ((directory "scripts" ((in-file "hall")))))
+              (documentation
+                ((org-file "README")
+                 (symlink "README" "README.org")
+                 (text-file "HACKING")
+                 (text-file "COPYING")
+                 (text-file "NEWS")
+                 (text-file "AUTHORS")
+                 (text-file "ChangeLog")
+                 (directory "doc" ((texi-file "hall")))))
+              (infrastructure
+                ((scheme-file "guix") (scheme-file "hall")))))
+
+
+File: guile-hall.info,  Node: A Script File,  Next: General Index,  Prev: A Hall Spec File,  Up: Top
+
+Appendix B A Script File
+************************
+
+Hall’s specification file should be the single place where you need to
+maintain your project’s metadata.  To this end, it may be useful to see
+how you can use this metadata in your project’s script files.
+
+   Below you will find how Hall itself does it in its ‘scripts/hall.in’
+file.
+
+   Please note, the technique used to draw VERSION, AUTHOR, COPYRIGHT &
+LICENSE into the script works through the autotools infrastructure.  It
+will only work in ‘.in’ files, and only for such files under the scripts
+directory.
+
+   Let me know if this is not good enough for you!
+
+     #!@GUILE@ \
+     --no-auto-compile -e main -s
+     !#
+     
+     ;; bin/hall --- hall cli -*- coding: utf-8 -*-
+     ;;
+     ;; Copyright (C) 2018-2020 Alex Sassmannshausen <alex@pompo.co>
+     ;;
+     ;; Author: Alex Sassmannshausen <alex@pompo.co>
+     ;;
+     ;; This file is part of guile-hall.
+     ;;
+     ;; guile-hall is free software; you can redistribute it and/or modify it under
+     ;; the terms of the GNU General Public License as published by the Free
+     ;; Software Foundation; either version 3 of the License, or (at your option)
+     ;; any later version.
+     ;;
+     ;; guile-hall is distributed in the hope that it will be useful, but WITHOUT
+     ;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+     ;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+     ;; more details.
+     ;;
+     ;; You should have received a copy of the GNU General Public License along
+     ;; with guile-hall; if not, contact:
+     ;;
+     ;; Free Software Foundation           Voice:  +1-617-542-5942
+     ;; 59 Temple Place - Suite 330        Fax:    +1-617-542-2652
+     ;; Boston, MA  02111-1307,  USA       gnu@gnu.org
+     
+     ;;; Commentary:
+     ;;
+     ;;; Code:
+     
+     (use-modules (config)
+                  (config api)
+                  (config parser sexp)
+                  (config licenses)
+                  (hall builders)
+                  (hall clean)
+                  (hall common)
+                  (hall build)
+                  (hall dist)
+                  (hall init)
+                  (hall scan)
+                  (ice-9 match)
+                  (srfi srfi-19)
+                  (srfi srfi-26))
+     
+     (define %configuration
+       (configuration
+        (name 'hall)
+        (version @HVERSION@)
+        (author @AUTHOR@)
+        (copyright @COPYRIGHT@)
+        (license @LICENSE@)
+        (synopsis "Guile project manager")
+        (description "Hall is a command-line application and a set of Guile
+     libraries that allow you to quickly create and publish Guile projects.  It
+     allows you to transparently support the GNU build system, manage a project
+     hierarchy & provides tight coupling to Guix.
+     
+     Use the subcommands to manage your project, or pass the '--help' flag to any
+     of them to get more information.")
+        (keywords
+         (list
+          (switch (name 'execute) (character #\x)
+                  (default #f) (test boolean?)
+                  (synopsis "Carry out operations, instead of displaying them."))))
+        (subcommands
+         (list
+          (configuration
+           (name 'clean)
+           (synopsis "Clean your project.")
+           (description "Generate a report of which files will be kept and which
+     files deleted in the cleaning process.  You can specify that you want to keep
+     specific files using the '--skip' argument.
+     
+     Once you are happy with the result, pass the '--execute' flag to carry out the
+     cleaning process.")
+           (wanted '((keywords execute)))
+           (keywords
+            (list
+             (switch
+              (name 'skip) (default '())
+              (test (match-lambda (((? string?) ...) #t) (_ #f)))
+              (handler (cut string-split <> #\,))
+              (synopsis "CSV list regexp patterns to indicate files to skip.")
+              (example "scripts/foo,AUTHORS,^.*rgp$")))))
+          (configuration
+           (name 'build-system) (alias 'build)
+           (synopsis "Prepare your project for a build system.")
+           (description "Generate a report of which files will be generated to
+     prepare the build-system for this project.
+     
+     Once you are happy with the result, pass the '--execute' flag to finally
+     generate build-system files.")
+           (wanted '((keywords execute))))
+          (configuration
+           (name 'distribution-system)
+           (alias 'dist)
+           (description "Subcommand to Hall's support for different distribution
+     system.  The default distribution system we encourage, and are coupled to, is
+     Guix.  But more will be supported over time.
+     
+     The default guix file that will be generated is one that can be used in the
+     project's repository, for use with Guix's 'environment' subcommand.  You can
+     also generate a tarball or git repository based package which can be used with
+     the 'guix package' subcommand, by using the '--type' argument.
+     
+     Once you are happy with the result, pass the '--execute' flag to generate the
+     guix package file.  You will want to delete the old Guix file before this.")
+           (synopsis "Manage your project's distribution files.")
+           (wanted '((keywords execute)))
+           (keywords
+            (list
+             (switch (name 'type) (default 'local)
+                     (test symbol?) (handler string->symbol)
+                     (synopsis "Guix recipe type to generate (defaults to local)")
+                     (example "local|git|tarball"))))
+           (arguments
+            (list
+             (argument (name 'system) (default "guix")
+                       (test (λ (t) (member t '("guix" "brew"))))
+                       (synopsis "The system to use")
+                       (example "guix|brew")))))
+          (configuration
+           (name 'initiate) (alias 'init)
+           (synopsis "Create or migrate a new project.")
+           (description "Generate a report of which files will be generated to
+     create a new project.  You can use a number of arguments (see above) to
+     provide additional metadata — but the project name is mandatory.
+     
+     Defaults for the author, prefix, website & license arguments can be set in the
+     ~/.hall configuration file.
+     
+     '--convert' can be used when you have an existing project that you want to
+     start using hall for.
+     
+     Once you are happy with the result, pass the '--execute' flag to finally
+     generate the new project.")
+           (wanted '((keywords execute)))
+           (arguments
+            (list
+             (argument (name 'name) (optional? #f)
+                       (test (negate string-null?))
+                       (synopsis "Name for the project.")
+                       (example "hello-world"))))
+           (keywords
+            (list
+             (switch (name 'convert) (default #f) (test boolean?)
+                     (synopsis "Convert this project to a Hall project."))
+             (setting (name 'author) (default "")
+                      (synopsis "Author of the project.")
+                      (example "\"Alyssa P. Hacker\""))
+             (setting (name 'prefix) (default "")
+                      (synopsis "Prefix of the project.")
+                      (example "guile"))
+             (setting (name 'website) (default "")
+                      (synopsis "Home-page for the project.")
+                      (example "\"https://website.mine\""))
+             (setting (name 'license) (default 'gpl3+)
+                      (handler string->symbol) (test symbol?)
+                      (example "gpl3+")
+                      (synopsis "License of your project (defaults to gpl3+)"))))
+           (subcommands
+            (list
+             (configuration
+              (name 'refresh)
+              (wanted '((keywords execute)))
+              (synopsis "Regenerate HACKING & COPYING files.")))))
+          (configuration
+           (name 'scan)
+           (synopsis "Refresh your project's Hall file.")
+           (description "Show a new hall.scm file that would be generated by this
+     command.  You can specify that you want scan to ignore specific files using
+     the '--skip' argument.
+     
+     Once you are happy with the result, pass the '--execute' flag to actually
+     generate the new hall.scm file.  You will want to delete the old hall.scm file
+     first.")
+           (wanted '((keywords execute)))
+           (arguments
+            (list
+             (argument
+              (name 'filename) (default #f)
+              (test (match-lambda ((or #f (? file-exists?)) #t) (_ #f)))
+              (synopsis "Add a single file to your hall.scm file.")
+              (example "tests/frobnigator.scm"))
+             (argument
+              (name 'section) (default #f)
+              (test (λ (t) (member t '(programs tests documentation infrastructure
+                                                libraries))))
+              (handler string->symbol)
+              (synopsis "The section under which you want to add the file.")
+              (example "programs|tests|documentation|infrastructure|libraries"))))
+           (keywords
+            (list
+             (switch
+              (name 'skip) (default '())
+              (test (match-lambda (((? string?) ...) #t) (_ #f)))
+              (handler (cut string-split <> #\,))
+              (synopsis "CSV list regexp patterns to indicate files to skip.")
+              (example "scripts/foo,AUTHORS,^.*rgp$")))))))
+        (directory (in-home "."))
+        (parser simple-sexp-parser)))
+     
+     (define* (main #:optional (args (command-line)))
+       "Entry point for the commandline application.  ARGS should be a normal
+     command-line list, e.g. '(\"hall\" \"clean\" \"--x\")."
+       (let* ((options (getopt-config-auto args %configuration))
+              (operation (if (option-ref options 'execute) 'exec 'show)))
+         (match (full-command options)
+           (("hall")
+            (emit-help options))
+           (("hall" "clean")
+            (clean-project (read-spec) (find-project-root-directory)
+                           (option-ref options 'skip) operation))
+           (("hall" "build-system")
+            (make-build-infrastructure (read-spec) (find-project-root-directory)
+                                       operation))
+           (("hall" "distribution-system")
+            (let ((run (cute <> (read-spec) (find-project-root-directory)
+                             operation)))
+              (match (option-ref options '(system))
+                ("brew"
+                 (run rewrite-brew-file))
+                ;; Guix is default and only one supported for now
+                (_
+                 (match (option-ref options 'type)
+                   ('local (run rewrite-guix-file))
+                   ('git (run git-guix-recipe))
+                   ('tarball (run tarball-guix-recipe)))))))
+           (("hall" "initiate")
+            (let ((spec (values->specification (option-ref options '(name))
+                                               (option-ref options 'prefix) "0.1"
+                                               (option-ref options 'author)
+                                               `(,(date-year (current-date)))
+                                               "" ""
+                                               (option-ref options 'website)
+                                               (option-ref options 'license)
+                                               '`() '() '() '() '() '() '())))
+              (cond ((option-ref options 'convert)
+                     (create-project-here spec '() operation))
+                    (else (create-project spec '() operation)))))
+           (("hall" "initiate" "refresh")
+            (recreate-project-here (read-spec) '() operation))
+           (("hall" "scan")
+            (match (cons (option-ref options '(filename))
+                         (option-ref options '(section)))
+              ((#f . #f) (scan-project (read-spec) (find-project-root-directory)
+                                       (option-ref options 'skip) operation))
+              ((or (#f . _) (_ . #f)) (emit-help options))
+              ((fn . sc) (add-to-project (read-spec) (find-project-root-directory)
+                                         fn sc operation)))))
+         (emit-notes)))
+     
+     ;;; Local Variables:
+     ;;; mode: scheme
+     ;;; End:
+
+
+File: guile-hall.info,  Node: General Index,  Prev: A Script File,  Up: Top
+
+General Index
+*************
+
+ [index ]
+* Menu:
+
+* --author:                              Hall Initiate.       (line  16)
+* --convert:                             Hall Initiate.       (line  83)
+* --license:                             Hall Initiate.       (line  33)
+* --prefix:                              Hall Initiate.       (line  55)
+* --skip:                                Hall Scan.           (line  59)
+* --skip <1>:                            Hall Clean.          (line  25)
+* --type:                                Hall Distribution-System.
+                                                              (line  17)
+* --website:                             Hall Initiate.       (line  77)
+* author:                                The Hall Specification.
+                                                              (line  60)
+* Build:                                 Hall Build-System.   (line   6)
+* Build-System:                          Hall Build-System.   (line   6)
+* Clean:                                 Hall Clean.          (line   6)
+* Converting Projects:                   Quickstart.          (line   6)
+* copyright:                             The Hall Specification.
+                                                              (line  74)
+* dependencies:                          The Hall Specification.
+                                                              (line 122)
+* description:                           The Hall Specification.
+                                                              (line  91)
+* Dist:                                  Hall Distribution-System.
+                                                              (line   6)
+* Distribution:                          Quickstart.          (line   6)
+* Distribution-System:                   Hall Distribution-System.
+                                                              (line   6)
+* Documentation Files:                   Hall Scan.           (line   6)
+* filename:                              Hall Scan.           (line  69)
+* files:                                 The Hall Specification.
+                                                              (line 170)
+* Guix:                                  Hall Distribution-System.
+                                                              (line   6)
+* home-page:                             The Hall Specification.
+                                                              (line  96)
+* Infrastructure Files:                  Hall Scan.           (line   6)
+* Init:                                  Hall Initiate.       (line   6)
+* Initiate:                              Hall Initiate.       (line   6)
+* Library Files:                         Hall Scan.           (line   6)
+* license:                               The Hall Specification.
+                                                              (line 101)
+* name:                                  The Hall Specification.
+                                                              (line  14)
+* New Projects:                          Quickstart.          (line   6)
+* prefix:                                The Hall Specification.
+                                                              (line  22)
+* Programs:                              Hall Scan.           (line   6)
+* Refresh:                               Hall Initiate Refresh.
+                                                              (line   6)
+* Scan:                                  Hall Scan.           (line   6)
+* section:                               Hall Scan.           (line  73)
+* skip:                                  The Hall Specification.
+                                                              (line 158)
+* synopsis:                              The Hall Specification.
+                                                              (line  85)
+* Tests:                                 Hall Scan.           (line   6)
+* Types of Files:                        Hall Scan.           (line   6)
+* version:                               The Hall Specification.
+                                                              (line  44)
+
+
+
+Tag Table:
+Node: Top647
+Node: Introduction1359
+Node: Installation3054
+Node: Quickstart6291
+Node: The Subcommands8428
+Node: Hall Initiate10091
+Node: Hall Initiate Refresh14106
+Node: Hall Scan14633
+Node: Hall Clean18388
+Node: Hall Distribution-System19673
+Node: Hall Build-System20972
+Node: The Hall Specification22697
+Node: Contributing29580
+Node: Acknowledgments30103
+Node: A Hall Spec File30364
+Node: A Script File32538
+Node: General Index45186
+
+End Tag Table
+
+
+Local Variables:
+coding: utf-8
+End:
